@@ -20,7 +20,7 @@ pub mod frame;
 const GROUND_HEIGHT: f32 = 20.0;
 const BUNKER_WIDTH: f32 = 30.0;
 const BUNKER_HEIGHT: f32 = 20.0;
-const MISSILE_SPEED: f32 = 150.0;
+const MISSILE_SPEED: f32 = 100.0;
 const EXPLOSION_MAX_RADIUS: f32 = 50.0;
 const EXPLOSION_GROWTH_RATE: f32 = 200.0;
 const ENEMY_MISSILE_SPAWN_INTERVAL: f32 = 1.0;
@@ -32,21 +32,41 @@ struct Bunker {
   firing: bool,
 }
 
-struct PlayerMissile {
+impl Bunker {
+  fn new(pos: Vec2) -> Self {
+    Self {
+      pos,
+      active: true,
+      firing: false,
+    }
+  }
+
+  fn reset(&mut self) {
+    self.active = true;
+    self.firing = false;
+  }
+}
+
+struct Missile {
   start_pos: Vec2,
   target_pos: Vec2,
   current_pos: Vec2,
   direction: Vec2,
+  target_bunker_idx: Option<usize>,
   exploded: bool,
 }
 
-struct EnemyMissile {
-  start_pos: Vec2,
-  target_pos: Vec2,
-  current_pos: Vec2,
-  direction: Vec2,
-  target_bunker_idx: usize,
-  exploded: bool,
+impl Missile {
+  fn new(start_pos: Vec2, target_pos: Vec2, target_bunker_idx: Option<usize>) -> Self {
+    Self {
+      start_pos,
+      target_pos,
+      current_pos: start_pos,
+      direction: (target_pos - start_pos).normalize(),
+      target_bunker_idx,
+      exploded: false,
+    }
+  }
 }
 
 struct Explosion {
@@ -67,8 +87,7 @@ impl Explosion {
 
 pub struct Game {
   bunkers: Vec<Bunker>,
-  player_missiles: Vec<PlayerMissile>,
-  enemy_missiles: Vec<EnemyMissile>,
+  missiles: Vec<Missile>,
   explosions: Vec<Explosion>,
   time_since_last_spawn: f32,
   game_over: bool,
@@ -80,29 +99,16 @@ impl Game {
   pub fn new() -> Box<Game> {
     // Create three bunkers at the bottom of the screen
     let bunkers = vec![
-      Bunker {
-        pos: Vec2::new(-200.0, 280.0 - BUNKER_HEIGHT),
-        active: true,
-        firing: false,
-      },
-      Bunker {
-        pos: Vec2::new(0.0, 280.0 - BUNKER_HEIGHT),
-        active: true,
-        firing: false,
-      },
-      Bunker {
-        pos: Vec2::new(200.0, 280.0 - BUNKER_HEIGHT),
-        active: true,
-        firing: false,
-      },
+      Bunker::new(Vec2::new(-200.0, 280.0 - BUNKER_HEIGHT)),
+      Bunker::new(Vec2::new(0.0, 280.0 - BUNKER_HEIGHT)),
+      Bunker::new(Vec2::new(200.0, 280.0 - BUNKER_HEIGHT)),
     ];
 
     let (viewport, view_rect) = Self::create_viewport();
 
     Box::new(Game {
       bunkers,
-      player_missiles: Vec::new(),
-      enemy_missiles: Vec::new(),
+      missiles: Vec::new(),
       explosions: Vec::new(),
       time_since_last_spawn: 0.0,
       game_over: false,
@@ -114,13 +120,11 @@ impl Game {
   fn reset(&mut self) {
     // Reset bunkers
     for bunker in &mut self.bunkers {
-      bunker.active = true;
-      bunker.firing = false;
+      bunker.reset();
     }
 
     // Clear missiles and explosions
-    self.player_missiles.clear();
-    self.enemy_missiles.clear();
+    self.missiles.clear();
     self.explosions.clear();
 
     // Reset timers and flags
@@ -167,51 +171,40 @@ impl Game {
       let (target_bunker_idx, target_bunker) = active_bunkers[random_idx];
       let target_pos = target_bunker.pos;
 
-      // Calculate direction vector
-      let direction = (target_pos - start_pos).normalize();
-
-      self.enemy_missiles.push(EnemyMissile {
-        start_pos,
-        target_pos,
-        current_pos: start_pos,
-        direction,
-        target_bunker_idx,
-        exploded: false,
-      });
+      self.missiles.push(Missile::new(start_pos, target_pos, Some(target_bunker_idx)));
     }
   }
 
   fn update_missiles(&mut self, dt: f32) {
     let mut new_explosions = Vec::new();
 
-    // Update player missiles
-    for missile in &mut self.player_missiles {
+    // Update all missiles
+    for missile in &mut self.missiles {
       if !missile.exploded {
         // Use stored direction
         missile.current_pos += missile.direction * MISSILE_SPEED * dt;
 
-        // Check if missile reached target
-        if missile.current_pos.distance(missile.target_pos) < 5.0 {
-          missile.exploded = true;
-          new_explosions.push(Explosion::new(missile.current_pos));
-        }
-      }
-    }
+        match missile.target_bunker_idx {
+          // Enemy missile
+          Some(target_bunker_idx) => {
+            // Check if missile hit its target bunker
+            if target_bunker_idx < self.bunkers.len() {
+              let bunker = &mut self.bunkers[target_bunker_idx];
 
-    // Update enemy missiles
-    for missile in &mut self.enemy_missiles {
-      if !missile.exploded {
-        // Use stored direction
-        missile.current_pos += missile.direction * MISSILE_SPEED * dt;
-
-        // Check if missile hit its target bunker
-        if missile.target_bunker_idx < self.bunkers.len() {
-          let bunker = &mut self.bunkers[missile.target_bunker_idx];
-
-          if missile.current_pos.distance(bunker.pos) < 2.0 {
-            missile.exploded = true;
-            bunker.active = false;
-            new_explosions.push(Explosion::new(bunker.pos));
+              if missile.current_pos.distance(bunker.pos) < 2.0 {
+                missile.exploded = true;
+                bunker.active = false;
+                new_explosions.push(Explosion::new(bunker.pos));
+              }
+            }
+          }
+          // Player missile
+          None => {
+            // Check if missile reached target
+            if missile.current_pos.distance(missile.target_pos) < 5.0 {
+              missile.exploded = true;
+              new_explosions.push(Explosion::new(missile.current_pos));
+            }
           }
         }
       }
@@ -232,16 +225,8 @@ impl Game {
 
     // Check for chain reactions with missiles
     for explosion in &self.explosions {
-      // Check player missiles
-      for missile in &mut self.player_missiles {
-        if !missile.exploded && missile.current_pos.distance(explosion.pos) <= explosion.radius {
-          missile.exploded = true;
-          new_explosions.push(Explosion::new(missile.current_pos));
-        }
-      }
-
-      // Check enemy missiles
-      for missile in &mut self.enemy_missiles {
+      // Check all missiles
+      for missile in &mut self.missiles {
         if !missile.exploded && missile.current_pos.distance(explosion.pos) <= explosion.radius {
           missile.exploded = true;
           new_explosions.push(Explosion::new(missile.current_pos));
@@ -256,16 +241,15 @@ impl Game {
     self.explosions.retain(|e| e.radius < e.max_radius);
 
     // Remove exploded missiles
-    self.player_missiles.retain(|m| !m.exploded);
-    self.enemy_missiles.retain(|m| !m.exploded);
+    self.missiles.retain(|m| !m.exploded);
 
     // Update bunker firing status
     for bunker in &mut self.bunkers {
       if bunker.firing {
         let still_firing = self
-          .player_missiles
+          .missiles
           .iter()
-          .any(|m| !m.exploded && m.start_pos.distance(bunker.pos) < 5.0);
+          .any(|m| m.target_bunker_idx.is_none() && !m.exploded && m.start_pos.distance(bunker.pos) < 5.0);
         bunker.firing = still_firing;
       }
     }
@@ -297,15 +281,8 @@ impl Game {
       }
     }
 
-    // Draw player missiles
-    for missile in &self.player_missiles {
-      if !missile.exploded {
-        G::line(missile.start_pos, missile.current_pos, 1.0, color::WHITE);
-      }
-    }
-
-    // Draw enemy missiles
-    for missile in &self.enemy_missiles {
+    // Draw all missiles
+    for missile in &self.missiles {
       if !missile.exploded {
         G::line(missile.start_pos, missile.current_pos, 1.0, color::WHITE);
       }
@@ -354,16 +331,7 @@ impl AppState for Game {
           let bunker = &mut self.bunkers[bunker_idx];
           bunker.firing = true;
 
-          // Calculate direction vector
-          let direction = (world_pos - bunker.pos).normalize();
-
-          self.player_missiles.push(PlayerMissile {
-            start_pos: bunker.pos,
-            target_pos: world_pos,
-            current_pos: bunker.pos,
-            direction,
-            exploded: false,
-          });
+          self.missiles.push(Missile::new(bunker.pos, world_pos, None));
         }
       }
 
