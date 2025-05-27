@@ -97,7 +97,7 @@ impl Game {
 
     // Random position at the top of the screen
     let start_x = rng.random_range(-380.0..380.0);
-    let start_pos = Vec2::new(start_x, -280.0);
+    let start_pos = Vec2::new(start_x, -300.0);
 
     // Target one of the bunkers
     let active_bunkers: Vec<(usize, &Bunker)> = self.bunkers.iter().enumerate().filter(|(_, b)| b.active).collect();
