@@ -8,7 +8,6 @@ static mut FRAME: Frame = Frame::initial();
 
 #[derive(Debug, Clone, Copy, Default)]
 pub struct Frame {
-  pub game_t: f32,
   pub t: f32,
 
   pub screen_size: Vec2,
@@ -17,7 +16,6 @@ pub struct Frame {
 impl Frame {
   const fn initial() -> Self {
     Self {
-      game_t: 0.,
       t: 0.,
       screen_size: Vec2::new(800., 600.),
     }
@@ -30,7 +28,6 @@ impl Frame {
   pub fn update() {
     let mut frame = Self::get();
     frame.t = get_frame_time();
-    frame.game_t += frame.t;
     frame.screen_size = Vec2::new(screen_width(), screen_height());
     unsafe {
       FRAME = frame;

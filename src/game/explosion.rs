@@ -1,11 +1,39 @@
 use macroquad::prelude::Vec2;
 use crate::game::constants::{EXPLOSION_MAX_RADIUS, EXPLOSION_GROWTH_RATE};
+use crate::game::player::Player;
 
 #[derive(PartialEq)]
 pub enum ExplosionPhase {
     Linear,    // Phase 1: Linear growth until 80% of max radius
     Decelerate, // Phase 2: Decreasing speed until max radius
     Static     // Phase 3: Stay at maximum radius for a short time
+}
+
+/// Parameters for creating an explosion
+pub struct ExplosionParams {
+    pub max_radius: f32,
+    pub growth_rate: f32,
+    pub static_duration: f32,
+}
+
+impl Default for ExplosionParams {
+    fn default() -> Self {
+        Self {
+            max_radius: EXPLOSION_MAX_RADIUS,
+            growth_rate: EXPLOSION_GROWTH_RATE,
+            static_duration: 0.05, // Default static duration from Explosion::new
+        }
+    }
+}
+
+impl From<&Player> for ExplosionParams {
+    fn from(player: &Player) -> Self {
+        Self {
+            max_radius: player.get_explosion_max_radius(),
+            growth_rate: player.get_explosion_growth_rate(),
+            static_duration: player.get_explosion_static_duration(),
+        }
+    }
 }
 
 pub struct Explosion {
@@ -21,11 +49,11 @@ pub struct Explosion {
 }
 
 impl Explosion {
-  pub fn new(pos: Vec2) -> Explosion {
-    let max_radius = EXPLOSION_MAX_RADIUS;
+  pub fn new(pos: Vec2, params: ExplosionParams) -> Explosion {
+    let max_radius = params.max_radius;
     let phase_transition_radius = max_radius * 0.8;
-    let initial_growth_rate = EXPLOSION_GROWTH_RATE;
-    let static_duration = 0.05; // Stay at max radius for 0.5 seconds
+    let initial_growth_rate = params.growth_rate;
+    let static_duration = params.static_duration;
 
     Explosion {
       pos,
@@ -38,6 +66,11 @@ impl Explosion {
       static_duration,
       static_time_elapsed: 0.0,
     }
+  }
+
+  // Convenience method that uses default parameters
+  pub fn new_default(pos: Vec2) -> Explosion {
+    Self::new(pos, ExplosionParams::default())
   }
 
   pub fn update(&mut self, dt: f32) {

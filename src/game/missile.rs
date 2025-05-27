@@ -23,4 +23,8 @@ impl Missile {
       speed,
     }
   }
+  
+  pub fn is_player_missile(&self) -> bool {
+    self.target_bunker_idx.is_none()
+  }
 }

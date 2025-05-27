@@ -20,11 +20,13 @@ pub mod constants;
 pub mod explosion;
 pub mod frame;
 pub mod missile;
+pub mod player;
 
 use bunker::Bunker;
 use constants::*;
-use explosion::Explosion;
+use explosion::{Explosion, ExplosionParams};
 use missile::Missile;
+use player::Player;
 
 pub struct Game {
   bunkers: Vec<Bunker>,
@@ -35,6 +37,7 @@ pub struct Game {
   view_rect: Rect,
   viewport: Viewport,
   game_time: f32,
+  player: Player,
 }
 
 impl Game {
@@ -57,6 +60,7 @@ impl Game {
       view_rect,
       viewport,
       game_time: 0.0,
+      player: Player::new(),
     })
   }
 
@@ -130,7 +134,7 @@ impl Game {
               if missile.current_pos.distance(bunker.pos) < 2.0 {
                 missile.exploded = true;
                 bunker.active = false;
-                new_explosions.push(Explosion::new(bunker.pos));
+                new_explosions.push(Explosion::new_default(bunker.pos));
               }
             }
           }
@@ -139,7 +143,9 @@ impl Game {
             // Check if missile reached target
             if missile.current_pos.distance(missile.target_pos) < 5.0 {
               missile.exploded = true;
-              new_explosions.push(Explosion::new(missile.current_pos));
+              // Use player's skills for player missiles
+              let params = ExplosionParams::from(&self.player);
+              new_explosions.push(Explosion::new(missile.current_pos, params));
             }
           }
         }
@@ -166,7 +172,15 @@ impl Game {
       for missile in &mut self.missiles {
         if !missile.exploded && missile.current_pos.distance(explosion.pos) <= explosion.radius {
           missile.exploded = true;
-          new_explosions.push(Explosion::new(missile.current_pos));
+          // Check if it's a player missile or an enemy missile
+          if missile.is_player_missile() {
+            // Player missile - use player's skills
+            let params = ExplosionParams::from(&self.player);
+            new_explosions.push(Explosion::new(missile.current_pos, params));
+          } else {
+            // Enemy missile - use default parameters
+            new_explosions.push(Explosion::new_default(missile.current_pos));
+          }
         }
       }
     }
@@ -285,7 +299,9 @@ impl AppState for Game {
           let bunker = &mut self.bunkers[bunker_idx];
           bunker.firing = true;
 
-          self.missiles.push(Missile::new(bunker.pos, world_pos, None, MISSILE_SPEED));
+          // Use player's missile speed skill
+          let missile_speed = self.player.get_missile_speed();
+          self.missiles.push(Missile::new(bunker.pos, world_pos, None, missile_speed));
         }
       }
 
