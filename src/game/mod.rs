@@ -27,7 +27,7 @@ use bunker::Bunker;
 use constants::*;
 use explosion::{Explosion, ExplosionParams};
 use missile::Missile;
-use player::Player;
+use player::{Player, Skill};
 use star::Star;
 
 pub struct Game {
@@ -42,6 +42,9 @@ pub struct Game {
   game_time: f32,
   player: Player,
   level_ups_left: usize,
+  // Skill selection menu state
+  skill_options: Vec<Skill>,
+  selected_skill_index: usize,
 }
 
 impl Game {
@@ -82,6 +85,8 @@ impl Game {
       game_time: 0.0,
       player: Player::new(),
       level_ups_left: 0,
+      skill_options: Vec::new(),
+      selected_skill_index: 0,
     })
   }
 
@@ -271,6 +276,45 @@ impl Game {
     }
   }
 
+  // Show the skill selection menu with two random skills
+  fn show_skill_selection_menu(&mut self) {
+    if self.skill_options.is_empty() && self.level_ups_left > 0 {
+      // Get two random skills
+      self.skill_options = Skill::random_subset(2);
+      self.selected_skill_index = 0;
+    }
+  }
+
+  // Handle player input for skill selection
+  fn handle_skill_selection_input(&mut self) {
+    if !self.is_skill_selection_active() {
+      return;
+    }
+
+    // Navigate between skills with left/right arrow keys
+    if is_key_pressed(KeyCode::Left) {
+      self.selected_skill_index = self.selected_skill_index.saturating_sub(1);
+    }
+    if is_key_pressed(KeyCode::Right) {
+      self.selected_skill_index = (self.selected_skill_index + 1).min(self.skill_options.len() - 1);
+    }
+
+    // Select skill with Enter or Space
+    if is_key_pressed(KeyCode::Enter) || is_key_pressed(KeyCode::Space) {
+      if let Some(selected_skill) = self.skill_options.get(self.selected_skill_index) {
+        // Level up the selected skill
+        self.player.level_up_skill(*selected_skill);
+        self.level_ups_left -= 1;
+        self.skill_options.clear();
+
+        // If there are more level ups left, show the menu again
+        if self.level_ups_left > 0 {
+          self.show_skill_selection_menu();
+        }
+      }
+    }
+  }
+
   fn render(&self) {
     clear_background(BLACK);
 
@@ -325,6 +369,57 @@ impl Game {
       G::centered_text("GAME OVER", 0.0, -20.0, 40.0, color::WHITE);
       G::centered_text("Press any key to restart", 0.0, 20.0, 20.0, color::WHITE);
     }
+
+    // Draw skill selection menu if active
+    if self.is_skill_selection_active() {
+      // Draw semi-transparent background
+      let menu_bg = Rect::new(-300.0, -200.0, 600.0, 400.0);
+      G::filled_rect(menu_bg, color::BLACK.with_alpha(0.8));
+
+      // Draw title
+      G::centered_text("LEVEL UP!", 0.0, -150.0, 30.0, color::YELLOW);
+      G::centered_text("Choose a skill to improve:", 0.0, -110.0, 20.0, color::WHITE);
+
+      // Draw skill options
+      for (i, skill) in self.skill_options.iter().enumerate() {
+        let x_pos = -200.0 + i as f32 * 400.0;
+        let y_pos = -50.0;
+        let is_selected = i == self.selected_skill_index;
+
+        // Draw selection box
+        if is_selected {
+          let box_x = x_pos - 150.0;
+          let box_y = y_pos - 30.0;
+          let box_width = 300.0;
+          let box_height = 200.0;
+
+          // Draw the four lines of the rectangle
+          G::line(Vec2::new(box_x, box_y), Vec2::new(box_x + box_width, box_y), 2.0, color::YELLOW); // Top
+          G::line(Vec2::new(box_x, box_y), Vec2::new(box_x, box_y + box_height), 2.0, color::YELLOW); // Left
+          G::line(Vec2::new(box_x + box_width, box_y), Vec2::new(box_x + box_width, box_y + box_height), 2.0, color::YELLOW); // Right
+          G::line(Vec2::new(box_x, box_y + box_height), Vec2::new(box_x + box_width, box_y + box_height), 2.0, color::YELLOW); // Bottom
+        }
+
+        // Draw skill name
+        let color = if is_selected { color::YELLOW } else { color::WHITE };
+        G::centered_text(skill.name(), x_pos, y_pos, 25.0, color);
+
+        // Draw current level
+        let level = self.player.get_skill_level(*skill);
+        let level_text = format!("Current Level: {}", level);
+        G::centered_text(&level_text, x_pos, y_pos + 40.0, 20.0, color);
+
+        // Draw description
+        G::centered_text(skill.description(), x_pos, y_pos + 80.0, 15.0, color);
+      }
+
+      // Draw instructions
+      G::centered_text("Use LEFT/RIGHT arrows to select, ENTER or SPACE to confirm", 0.0, 150.0, 15.0, color::WHITE);
+    }
+  }
+  
+  fn is_skill_selection_active(&self) -> bool {
+    self.level_ups_left > 0
   }
 
   // Format elapsed time as mm:ss
@@ -352,50 +447,58 @@ impl AppState for Game {
 
     let dt = Frame::get().t;
 
-    // Update game time
-    if !self.game_over {
-      self.game_time += dt;
-    }
-
     if self.game_over {
       if !get_keys_down().is_empty() {
         self.reset();
       }
     } else {
-      // Handle mouse click for firing missiles
-      if is_mouse_button_pressed(MouseButton::Left) {
-        let mouse_pos = mouse_pos();
-        let world_pos = self.viewport.vec2_to_view(mouse_pos);
+      // Show skill selection menu if there are level ups available
+      self.show_skill_selection_menu();
 
-        if let Some(bunker_idx) = self.find_closest_active_bunker(world_pos) {
-          let bunker = &mut self.bunkers[bunker_idx];
-          bunker.firing = true;
-
-          // Use player's missile speed skill
-          let missile_speed = self.player.get_missile_speed();
-          self.missiles.push(Missile::new(bunker.pos, world_pos, None, missile_speed));
+      // Handle skill selection input
+      if self.is_skill_selection_active() {
+        self.handle_skill_selection_input();
+      } else {
+        // Update game time
+        if !self.game_over {
+          self.game_time += dt;
         }
+
+        // Handle mouse click for firing missiles
+        if is_mouse_button_pressed(MouseButton::Left) {
+          let mouse_pos = mouse_pos();
+          let world_pos = self.viewport.vec2_to_view(mouse_pos);
+
+          if let Some(bunker_idx) = self.find_closest_active_bunker(world_pos) {
+            let bunker = &mut self.bunkers[bunker_idx];
+            bunker.firing = true;
+
+            // Use player's missile speed skill
+            let missile_speed = self.player.get_missile_speed();
+            self.missiles.push(Missile::new(bunker.pos, world_pos, None, missile_speed));
+          }
+        }
+
+        // Spawn enemy missiles
+        self.time_until_next_missile_spawn -= dt;
+
+        if self.time_until_next_missile_spawn <= 0.0 {
+          self.spawn_enemy_missile();
+
+          // Get base spawn interval
+          let spawn_interval = get_enemy_missile_spawn_interval(self.game_time);
+
+          // Randomize by ±50%
+          let mut rng = rng();
+          let random_factor = rng.random_range(0.5..1.5);
+          self.time_until_next_missile_spawn = spawn_interval * random_factor;
+        }
+
+        // Update game state
+        self.update_missiles(dt);
+        self.update_explosions(dt);
+        self.check_game_over();
       }
-
-      // Spawn enemy missiles
-      self.time_until_next_missile_spawn -= dt;
-
-      if self.time_until_next_missile_spawn <= 0.0 {
-        self.spawn_enemy_missile();
-
-        // Get base spawn interval
-        let spawn_interval = get_enemy_missile_spawn_interval(self.game_time);
-
-        // Randomize by ±50%
-        let mut rng = rng();
-        let random_factor = rng.random_range(0.5..1.5);
-        self.time_until_next_missile_spawn = spawn_interval * random_factor;
-      }
-
-      // Update game state
-      self.update_missiles(dt);
-      self.update_explosions(dt);
-      self.check_game_over();
     }
 
     self.render();
