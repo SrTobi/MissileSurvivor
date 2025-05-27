@@ -291,26 +291,41 @@ impl Game {
       return;
     }
 
-    // Navigate between skills with left/right arrow keys
-    if is_key_pressed(KeyCode::Left) {
-      self.selected_skill_index = self.selected_skill_index.saturating_sub(1);
-    }
-    if is_key_pressed(KeyCode::Right) {
-      self.selected_skill_index = (self.selected_skill_index + 1).min(self.skill_options.len() - 1);
-    }
+    // Get mouse position in world coordinates
+    let mouse_pos = mouse_pos();
+    let world_pos = self.viewport.vec2_to_view(mouse_pos);
 
-    // Select skill with Enter or Space
-    if is_key_pressed(KeyCode::Enter) || is_key_pressed(KeyCode::Space) {
-      if let Some(selected_skill) = self.skill_options.get(self.selected_skill_index) {
-        // Level up the selected skill
-        self.player.level_up_skill(*selected_skill);
-        self.level_ups_left -= 1;
-        self.skill_options.clear();
+    // Check if mouse is hovering over any skill option
+    for (i, _) in self.skill_options.iter().enumerate() {
+      let x_pos = -150.0 + i as f32 * 300.0;
+      let y_pos = -50.0;
+      let box_x = x_pos - 150.0;
+      let box_y = y_pos - 30.0;
+      let box_width = 300.0;
+      let box_height = 200.0;
 
-        // If there are more level ups left, show the menu again
-        if self.level_ups_left > 0 {
-          self.show_skill_selection_menu();
+      // Check if mouse is inside this skill's box
+      if world_pos.x >= box_x && world_pos.x <= box_x + box_width &&
+         world_pos.y >= box_y && world_pos.y <= box_y + box_height {
+        // Update selected skill index
+        self.selected_skill_index = i;
+
+        // Select skill with mouse click
+        if is_mouse_button_pressed(MouseButton::Left) {
+          if let Some(selected_skill) = self.skill_options.get(self.selected_skill_index) {
+            // Level up the selected skill
+            self.player.level_up_skill(*selected_skill);
+            self.level_ups_left -= 1;
+            self.skill_options.clear();
+
+            // If there are more level ups left, show the menu again
+            if self.level_ups_left > 0 {
+              self.show_skill_selection_menu();
+            }
+          }
         }
+
+        break;
       }
     }
   }
@@ -382,7 +397,7 @@ impl Game {
 
       // Draw skill options
       for (i, skill) in self.skill_options.iter().enumerate() {
-        let x_pos = -200.0 + i as f32 * 400.0;
+        let x_pos = -150.0 + i as f32 * 300.0;
         let y_pos = -50.0;
         let is_selected = i == self.selected_skill_index;
 
@@ -414,10 +429,10 @@ impl Game {
       }
 
       // Draw instructions
-      G::centered_text("Use LEFT/RIGHT arrows to select, ENTER or SPACE to confirm", 0.0, 150.0, 15.0, color::WHITE);
+      G::centered_text("Hover over a skill and click to select", 0.0, 150.0, 15.0, color::WHITE);
     }
   }
-  
+
   fn is_skill_selection_active(&self) -> bool {
     self.level_ups_left > 0
   }
