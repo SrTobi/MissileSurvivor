@@ -65,7 +65,7 @@ HTML=$(cat <<- END
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>EconTest</title>
+    <title>${PROJECT_NAME}</title>
     <base href="." />
     <style>
         html,

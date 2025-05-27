@@ -21,7 +21,7 @@ lazy_static::lazy_static! {
     static ref NEXT_STATE: Mutex<Option<Box<dyn AppState + Send>>> = Mutex::new(None);
 }
 
-#[macroquad::main("Axion")]
+#[macroquad::main("MCom")]
 async fn main() {
   env_logger::builder()
     .filter_level(log::LevelFilter::Info)
