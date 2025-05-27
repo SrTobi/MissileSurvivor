@@ -15,26 +15,26 @@ use macroquad::{color, prelude::*};
 use rand_distr::Exp;
 use std::{process, time::Duration};
 
-pub mod frame;
-pub mod constants;
 pub mod bunker;
-pub mod missile;
+pub mod constants;
 pub mod explosion;
+pub mod frame;
+pub mod missile;
 
-use constants::*;
 use bunker::Bunker;
-use missile::Missile;
+use constants::*;
 use explosion::Explosion;
-
+use missile::Missile;
 
 pub struct Game {
   bunkers: Vec<Bunker>,
   missiles: Vec<Missile>,
   explosions: Vec<Explosion>,
-  time_since_last_spawn: f32,
+  time_until_next_missile_spawn: f32,
   game_over: bool,
   view_rect: Rect,
   viewport: Viewport,
+  game_time: f32,
 }
 
 impl Game {
@@ -52,26 +52,16 @@ impl Game {
       bunkers,
       missiles: Vec::new(),
       explosions: Vec::new(),
-      time_since_last_spawn: 0.0,
+      time_until_next_missile_spawn: INITIAL_SPAWN_TIME,
       game_over: false,
       view_rect,
       viewport,
+      game_time: 0.0,
     })
   }
 
   fn reset(&mut self) {
-    // Reset bunkers
-    for bunker in &mut self.bunkers {
-      bunker.reset();
-    }
-
-    // Clear missiles and explosions
-    self.missiles.clear();
-    self.explosions.clear();
-
-    // Reset timers and flags
-    self.time_since_last_spawn = 0.0;
-    self.game_over = false;
+    *self = *Game::new();
   }
 
   fn create_viewport() -> (Viewport, Rect) {
@@ -113,7 +103,12 @@ impl Game {
       let (target_bunker_idx, target_bunker) = active_bunkers[random_idx];
       let target_pos = target_bunker.pos;
 
-      self.missiles.push(Missile::new(start_pos, target_pos, Some(target_bunker_idx)));
+      // Calculate enemy missile speed based on elapsed time
+      let speed = get_enemy_missile_speed(self.game_time);
+
+      self
+        .missiles
+        .push(Missile::new(start_pos, target_pos, Some(target_bunker_idx), speed));
     }
   }
 
@@ -123,8 +118,7 @@ impl Game {
     // Update all missiles
     for missile in &mut self.missiles {
       if !missile.exploded {
-        // Use stored direction
-        missile.current_pos += missile.direction * MISSILE_SPEED * dt;
+        missile.current_pos += missile.direction * missile.speed * dt;
 
         match missile.target_bunker_idx {
           // Enemy missile
@@ -235,11 +229,23 @@ impl Game {
       G::circle(explosion.pos, explosion.radius, 1.0, color::WHITE);
     }
 
+    // Draw timer in top right corner
+    let timer_text = Game::format_time(self.game_time);
+    G::centered_text(&timer_text, 350.0, -280.0, 20.0, color::WHITE);
+
     // Draw game over text
     if self.game_over {
       G::centered_text("GAME OVER", 0.0, -20.0, 40.0, color::WHITE);
       G::centered_text("Press any key to restart", 0.0, 20.0, 20.0, color::WHITE);
     }
+  }
+
+  // Format elapsed time as mm:ss
+  fn format_time(seconds: f32) -> String {
+    let total_seconds = seconds as u32;
+    let minutes = total_seconds / 60;
+    let seconds = total_seconds % 60;
+    format!("{:02}:{:02}", minutes, seconds)
   }
 }
 
@@ -259,6 +265,11 @@ impl AppState for Game {
 
     let dt = Frame::get().t;
 
+    // Update game time
+    if !self.game_over {
+      self.game_time += dt;
+    }
+
     if self.game_over {
       if !get_keys_down().is_empty() {
         self.reset();
@@ -273,15 +284,23 @@ impl AppState for Game {
           let bunker = &mut self.bunkers[bunker_idx];
           bunker.firing = true;
 
-          self.missiles.push(Missile::new(bunker.pos, world_pos, None));
+          self.missiles.push(Missile::new(bunker.pos, world_pos, None, MISSILE_SPEED));
         }
       }
 
       // Spawn enemy missiles
-      self.time_since_last_spawn += dt;
-      if self.time_since_last_spawn >= ENEMY_MISSILE_SPAWN_INTERVAL {
+      self.time_until_next_missile_spawn -= dt;
+
+      if self.time_until_next_missile_spawn <= 0.0 {
         self.spawn_enemy_missile();
-        self.time_since_last_spawn = 0.0;
+
+        // Get base spawn interval
+        let spawn_interval = get_enemy_missile_spawn_interval(self.game_time);
+
+        // Randomize by ±50%
+        let mut rng = rng();
+        let random_factor = rng.random_range(0.5..1.5);
+        self.time_until_next_missile_spawn = spawn_interval * random_factor;
       }
 
       // Update game state

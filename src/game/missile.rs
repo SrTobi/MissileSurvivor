@@ -1,4 +1,5 @@
 use macroquad::prelude::Vec2;
+use crate::game::constants::{MISSILE_SPEED, get_enemy_missile_speed};
 
 pub struct Missile {
   pub start_pos: Vec2,
@@ -7,10 +8,11 @@ pub struct Missile {
   pub direction: Vec2,
   pub target_bunker_idx: Option<usize>,
   pub exploded: bool,
+  pub speed: f32,
 }
 
 impl Missile {
-  pub fn new(start_pos: Vec2, target_pos: Vec2, target_bunker_idx: Option<usize>) -> Self {
+  pub fn new(start_pos: Vec2, target_pos: Vec2, target_bunker_idx: Option<usize>, speed: f32) -> Self {
     Self {
       start_pos,
       target_pos,
@@ -18,6 +20,7 @@ impl Missile {
       direction: (target_pos - start_pos).normalize(),
       target_bunker_idx,
       exploded: false,
+      speed,
     }
   }
 }
