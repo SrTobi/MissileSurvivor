@@ -1,5 +1,5 @@
 pub const GROUND_HEIGHT: f32 = 20.0;
-pub const BUNKER_WIDTH: f32 = 30.0;
+pub const BUNKER_WIDTH: f32 = 50.0;
 pub const BUNKER_HEIGHT: f32 = 20.0;
 pub const MISSILE_SPEED: f32 = 100.0;
 pub const EXPLOSION_MAX_RADIUS: f32 = 50.0;

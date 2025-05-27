@@ -12,6 +12,7 @@ use ::rand::Rng;
 use ::rand::rng;
 use frame::Frame;
 use macroquad::{color, prelude::*};
+use macroquad::shapes::draw_triangle;
 use rand_distr::Exp;
 use std::{process, time::Duration};
 
@@ -350,8 +351,18 @@ impl Game {
     // Draw bunkers
     for bunker in &self.bunkers {
       if bunker.active {
-        let bunker_rect = Rect::new(bunker.pos.x - BUNKER_WIDTH / 2.0, bunker.pos.y, BUNKER_WIDTH, BUNKER_HEIGHT);
-        G::filled_rect(bunker_rect, color::YELLOW);
+        // Calculate the slope amount (how much the sides are angled)
+        let slope_amount = BUNKER_HEIGHT / 2.0;
+
+        // Calculate the points for the trapezoid
+        let bottom_left = Vec2::new(bunker.pos.x - BUNKER_WIDTH / 2.0, bunker.pos.y + BUNKER_HEIGHT);
+        let bottom_right = Vec2::new(bunker.pos.x + BUNKER_WIDTH / 2.0, bunker.pos.y + BUNKER_HEIGHT);
+        let top_right = Vec2::new(bunker.pos.x + BUNKER_WIDTH / 2.0 - slope_amount, bunker.pos.y);
+        let top_left = Vec2::new(bunker.pos.x - BUNKER_WIDTH / 2.0 + slope_amount, bunker.pos.y);
+
+        // Draw the trapezoid using triangles
+        draw_triangle(bottom_left, bottom_right, top_right, color::YELLOW);
+        draw_triangle(bottom_left, top_left, top_right, color::YELLOW);
       }
     }
 
