@@ -68,6 +68,24 @@ impl Game {
         (viewport, view_rect)
     }
 
+    fn reset(&mut self) {
+        // Reset bunkers
+        self.bunkers = vec![
+            Bunker { pos: Vec2::new(-200.0, 280.0 - BUNKER_HEIGHT), active: true, firing: false },
+            Bunker { pos: Vec2::new(0.0, 280.0 - BUNKER_HEIGHT), active: true, firing: false },
+            Bunker { pos: Vec2::new(200.0, 280.0 - BUNKER_HEIGHT), active: true, firing: false },
+        ];
+
+        // Clear missiles and explosions
+        self.player_missiles.clear();
+        self.enemy_missiles.clear();
+        self.explosions.clear();
+
+        // Reset timers and flags
+        self.time_since_last_spawn = 0.0;
+        self.game_over = false;
+    }
+
     pub fn new() -> Box<Game> {
         // Create three bunkers at the bottom of the screen
         let bunkers = vec![
@@ -295,7 +313,8 @@ impl Game {
 
         // Draw game over text
         if self.game_over {
-            G::centered_text("GAME OVER", 0.0, 0.0, 40.0, color::WHITE);
+            G::centered_text("GAME OVER", 0.0, -20.0, 40.0, color::WHITE);
+            G::centered_text("Press any key to restart", 0.0, 20.0, 20.0, color::WHITE);
         }
     }
 }
@@ -316,7 +335,11 @@ impl AppState for Game {
 
         let dt = Frame::get().t;
 
-        if !self.game_over {
+        if self.game_over {
+            if !get_keys_down().is_empty() {
+                self.reset();
+            }
+        } else {
             // Handle mouse click for firing missiles
             if is_mouse_button_pressed(MouseButton::Left) {
                 let mouse_pos = mouse_pos();
