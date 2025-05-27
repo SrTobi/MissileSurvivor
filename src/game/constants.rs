@@ -11,11 +11,11 @@ pub const INITIAL_SPAWN_TIME: f32 = 2.0; // seconds
 pub fn get_enemy_missile_spawn_interval(elapsed_time: f32) -> f32 {
   // Start with a long interval and decrease over time
   // After 5 minutes, the interval will be 1/3 of the initial interval
-  let min_interval = ENEMY_MISSILE_SPAWN_INTERVAL / 3.0;
+  let min_interval = ENEMY_MISSILE_SPAWN_INTERVAL / 5.0;
   let time_to_min_interval = 300.0; // 5 minutes in seconds
 
   let interval_multiplier = 1.0 - (elapsed_time / time_to_min_interval) * (1.0 - min_interval / ENEMY_MISSILE_SPAWN_INTERVAL);
-  (ENEMY_MISSILE_SPAWN_INTERVAL * interval_multiplier).max(min_interval)
+  (ENEMY_MISSILE_SPAWN_INTERVAL * interval_multiplier).max(0.1)
 }
 
 // Calculate enemy missile speed based on elapsed time
@@ -23,7 +23,7 @@ pub fn get_enemy_missile_speed(elapsed_time: f32) -> f32 {
   // Start with a slow speed and increase over time
   // After 5 minutes, the speed will be 3 times the initial speed
   let base_speed = MISSILE_SPEED * 0.5; // Start at half the player missile speed
-  let max_speed_multiplier = 3.0;
+  let max_speed_multiplier = 5.0;
   let time_to_max_speed = 300.0; // 5 minutes in seconds
 
   let speed_multiplier = 1.0 + (elapsed_time / time_to_max_speed) * (max_speed_multiplier - 1.0);

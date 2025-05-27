@@ -44,9 +44,9 @@ impl Skill {
     pub fn description(&self) -> &'static str {
         match self {
             Skill::ExplosionSpeed => "Explosions grow 20% faster per level",
-            Skill::ExplosionAfterGlow => "Explosions last 20% longer per level",
-            Skill::ExplosionRadius => "Explosions are 20% larger per level",
-            Skill::MissileSpeed => "Missiles are 20% faster per level",
+            Skill::ExplosionAfterGlow => "Explosions last 50% longer per level",
+            Skill::ExplosionRadius => "Explosions are 15% larger per level",
+            Skill::MissileSpeed => "Missiles are 15% faster per level",
         }
     }
 }
@@ -84,19 +84,19 @@ impl Player {
     /// Get the explosion static duration multiplier based on the explosion after glow skill level
     /// Static duration grows by 20% per level
     pub fn get_explosion_static_duration(&self) -> f32 {
-        0.05 * (1.0 + 0.2 * self.explosion_after_glow_level as f32) // Base value 0.05 from Explosion::new
+        0.05 * (1.0 + 0.50 * self.explosion_after_glow_level as f32) // Base value 0.05 from Explosion::new
     }
 
     /// Get the explosion max radius multiplier based on the explosion radius skill level
     /// Max radius is 20% bigger per level
     pub fn get_explosion_max_radius(&self) -> f32 {
-        EXPLOSION_MAX_RADIUS * (1.0 + 0.2 * self.explosion_radius_level as f32)
+        EXPLOSION_MAX_RADIUS * (1.0 + 0.15 * self.explosion_radius_level as f32)
     }
 
     /// Get the missile speed multiplier based on the missile speed skill level
     /// Missiles are 20% faster per level
     pub fn get_missile_speed(&self) -> f32 {
-        MISSILE_SPEED * (1.0 + 0.2 * self.missile_speed_level as f32)
+        MISSILE_SPEED * (1.0 + 0.15 * self.missile_speed_level as f32)
     }
 
     pub fn player_level(&self) -> u32 {
@@ -106,7 +106,7 @@ impl Player {
     /// Calculate the experience required for the next level
     /// First level requires 50 experience, each subsequent level requires 10% more
     pub fn experience_required_for_next_level(&self) -> f32 {
-        50.0 * (1.0 + 0.1 * self.player_level as f32)
+        80.0 * (1.0 + 0.3 * self.player_level as f32)
     }
 
     /// Add experience to the player
