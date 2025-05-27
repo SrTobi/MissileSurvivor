@@ -156,7 +156,8 @@ impl Game {
 
     // Update existing explosions
     for explosion in &mut self.explosions {
-      explosion.radius += EXPLOSION_GROWTH_RATE * dt;
+      // Use the explosion's update method to handle growth mechanics
+      explosion.update(dt);
     }
 
     // Check for chain reactions with missiles
@@ -174,7 +175,7 @@ impl Game {
     self.explosions.append(&mut new_explosions);
 
     // Remove finished explosions
-    self.explosions.retain(|e| e.radius < e.max_radius);
+    self.explosions.retain(|e| !e.has_ended());
 
     // Remove exploded missiles
     self.missiles.retain(|m| !m.exploded);
