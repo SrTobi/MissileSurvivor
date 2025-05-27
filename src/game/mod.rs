@@ -1,9 +1,8 @@
 use frame::Frame;
 use macroquad::{color, prelude::*};
 use std::{process, time::Duration};
-use ::rand::prelude::*;
-use ::rand::thread_rng;
-
+use ::rand::rng;
+use ::rand::Rng;
 use crate::{
   utils::{
     color_ext::ColorExt, diagnostics::Diagnostics, graphics::G, viewport::{View, Viewport, ViewportMode}
@@ -18,7 +17,7 @@ const BUNKER_WIDTH: f32 = 30.0;
 const BUNKER_HEIGHT: f32 = 20.0;
 const MISSILE_SPEED: f32 = 150.0;
 const EXPLOSION_MAX_RADIUS: f32 = 50.0;
-const EXPLOSION_GROWTH_RATE: f32 = 100.0;
+const EXPLOSION_GROWTH_RATE: f32 = 200.0;
 const EXPLOSION_DURATION: f32 = 0.5;
 const ENEMY_MISSILE_SPAWN_INTERVAL: f32 = 1.0;
 
@@ -109,16 +108,16 @@ impl Game {
     }
 
     fn spawn_enemy_missile(&mut self) {
-        let mut rng = thread_rng();
+        let mut rng = rng();
 
         // Random position at the top of the screen
-        let start_x = rng.gen_range(-380.0..380.0);
+        let start_x = rng.random_range(-380.0..380.0);
         let start_pos = Vec2::new(start_x, -280.0);
 
         // Target one of the bunkers
         let active_bunkers: Vec<&Bunker> = self.bunkers.iter().filter(|b| b.active).collect();
         if !active_bunkers.is_empty() {
-            let target_bunker = active_bunkers[rng.gen_range(0..active_bunkers.len())];
+            let target_bunker = active_bunkers[rng.random_range(0..active_bunkers.len())];
             let target_pos = target_bunker.pos;
 
             self.enemy_missiles.push(EnemyMissile {
