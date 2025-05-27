@@ -18,7 +18,6 @@ const BUNKER_HEIGHT: f32 = 20.0;
 const MISSILE_SPEED: f32 = 150.0;
 const EXPLOSION_MAX_RADIUS: f32 = 50.0;
 const EXPLOSION_GROWTH_RATE: f32 = 200.0;
-const EXPLOSION_DURATION: f32 = 0.5;
 const ENEMY_MISSILE_SPAWN_INTERVAL: f32 = 1.0;
 
 #[derive(Clone, Copy)]
@@ -46,7 +45,6 @@ struct Explosion {
     pos: Vec2,
     radius: f32,
     max_radius: f32,
-    time_remaining: f32,
 }
 
 pub struct Game {
@@ -66,7 +64,6 @@ impl Game {
             pos,
             radius: 0.0,
             max_radius: EXPLOSION_MAX_RADIUS,
-            time_remaining: EXPLOSION_DURATION,
         }
     }
 
@@ -204,26 +201,23 @@ impl Game {
         // Update existing explosions
         for explosion in &mut self.explosions {
             explosion.radius += EXPLOSION_GROWTH_RATE * dt;
-            explosion.time_remaining -= dt;
         }
 
         // Check for chain reactions with missiles
         for explosion in &self.explosions {
-            if explosion.radius <= explosion.max_radius {
-                // Check player missiles
-                for missile in &mut self.player_missiles {
-                    if !missile.exploded && missile.current_pos.distance(explosion.pos) <= explosion.radius {
-                        missile.exploded = true;
-                        new_explosions.push(Self::create_explosion(missile.current_pos));
-                    }
+            // Check player missiles
+            for missile in &mut self.player_missiles {
+                if !missile.exploded && missile.current_pos.distance(explosion.pos) <= explosion.radius {
+                    missile.exploded = true;
+                    new_explosions.push(Self::create_explosion(missile.current_pos));
                 }
+            }
 
-                // Check enemy missiles
-                for missile in &mut self.enemy_missiles {
-                    if !missile.exploded && missile.current_pos.distance(explosion.pos) <= explosion.radius {
-                        missile.exploded = true;
-                        new_explosions.push(Self::create_explosion(missile.current_pos));
-                    }
+            // Check enemy missiles
+            for missile in &mut self.enemy_missiles {
+                if !missile.exploded && missile.current_pos.distance(explosion.pos) <= explosion.radius {
+                    missile.exploded = true;
+                    new_explosions.push(Self::create_explosion(missile.current_pos));
                 }
             }
         }
@@ -232,7 +226,7 @@ impl Game {
         self.explosions.append(&mut new_explosions);
 
         // Remove finished explosions
-        self.explosions.retain(|e| e.time_remaining > 0.0);
+        self.explosions.retain(|e| e.radius < e.max_radius);
 
         // Remove exploded missiles
         self.player_missiles.retain(|m| !m.exploded);
