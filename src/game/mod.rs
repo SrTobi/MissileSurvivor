@@ -461,6 +461,7 @@ impl Game {
 
 impl AppState for Game {
   fn update(&mut self) {
+    #[cfg(not(any(target_arch = "wasm32", target_os = "unknown")))]
     if is_key_down(KeyCode::Escape) {
       process::exit(0);
     }
@@ -476,7 +477,7 @@ impl AppState for Game {
     let dt = Frame::get().t;
 
     if self.game_over {
-      if !get_keys_down().is_empty() {
+      if !get_keys_down().is_empty() || is_mouse_button_released(MouseButton::Left) {
         self.reset();
       }
     } else {
