@@ -390,6 +390,10 @@ impl Game {
     let timer_text = Game::format_time(self.game_time);
     G::centered_text(&timer_text, 350.0, -280.0, 20.0, color::WHITE);
 
+    // Draw player level under the timer
+    let level_text = format!("Level: {}", self.player.player_level());
+    G::centered_text(&level_text, 350.0, -255.0, 16.0, color::WHITE);
+
     // Draw game over text
     if self.game_over {
       G::centered_text("GAME OVER", 0.0, -20.0, 40.0, color::WHITE);

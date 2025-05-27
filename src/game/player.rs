@@ -122,14 +122,9 @@ impl Player {
         stars
     }
 
-    /// Level up the player
-    /// This will reset the experience counter and increment the player level
-    pub fn level_up(&mut self) {
-        self.player_level += 1;
-    }
-
     /// Level up a specific skill
     pub fn level_up_skill(&mut self, skill: Skill) {
+        self.player_level += 1;
         match skill {
             Skill::ExplosionSpeed => self.explosion_speed_level += 1,
             Skill::ExplosionAfterGlow => self.explosion_after_glow_level += 1,
