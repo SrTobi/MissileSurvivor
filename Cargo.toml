@@ -37,3 +37,4 @@ macroquad = "0.4"
 paste = "1.0"
 rand = "0.9"
 rand_distr = "0.5.1"
+getrandom = { version = "0.3", features = ["wasm_js"] }
