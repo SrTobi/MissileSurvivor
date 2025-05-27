@@ -106,7 +106,7 @@ impl Player {
     /// Calculate the experience required for the next level
     /// First level requires 50 experience, each subsequent level requires 10% more
     pub fn experience_required_for_next_level(&self) -> f32 {
-        80.0 * (1.0 + 0.3 * self.player_level as f32)
+        60.0 * (1.0 + 0.3 * self.player_level as f32)
     }
 
     /// Add experience to the player
