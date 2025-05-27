@@ -1,5 +1,6 @@
 use frame::Frame;
 use macroquad::{color, prelude::*};
+use std::process;
 
 use crate::{
   utils::{
@@ -36,6 +37,10 @@ impl Game {
 
 impl AppState for Game {
   fn update(&mut self) {
+    if is_key_down(KeyCode::Escape) {
+      process::exit(0);
+    }
+
     Diagnostics::update();
     Frame::update();
 
