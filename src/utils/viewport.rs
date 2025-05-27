@@ -2,7 +2,7 @@ use macroquad::{
   math::{vec2, FloatExt},
   prelude::{set_camera, Camera2D, Rect, Vec2},
 };
-
+use rand_distr::num_traits::Zero;
 use crate::game::frame::Frame;
 
 #[derive(Clone, Copy, Debug)]
@@ -168,19 +168,19 @@ impl Viewport {
   }
 
   pub fn vec2_to_screen(&self, pos: Vec2) -> Vec2 {
-    // let view_size = self.view_size();
-    // let rel_pos = (pos - self.pos) / (view_size / 2.);
-    // let half_screen_size = self.screen_size / 2.;
-    // half_screen_size + rel_pos * half_screen_size
-    todo!()
+    assert!(self.rotation.is_zero());
+    let view_size = self.view_size();
+    let rel_pos = (pos - self.center) / (view_size / 2.);
+    let half_screen_size = self.screen_size / 2.;
+    half_screen_size + rel_pos * half_screen_size
   }
 
   pub fn vec2_to_view(&self, pos: Vec2) -> Vec2 {
-    // let view_size = self.view_size();
-    // let half_screen_size = self.screen_size / 2.;
-    // let rel_pos = (pos - half_screen_size) / half_screen_size;
-    // self.pos + rel_pos * (view_size / 2.)
-    todo!()
+    assert!(self.rotation.is_zero());
+    let view_size = self.view_size();
+    let half_screen_size = self.screen_size / 2.;
+    let rel_pos = (pos - half_screen_size) / half_screen_size;
+    self.center + rel_pos * (view_size / 2.)
   }
 
   pub fn view_rect(&self) -> Rect {

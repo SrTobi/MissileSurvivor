@@ -9,6 +9,7 @@ use crate::{
     color_ext::ColorExt, diagnostics::Diagnostics, graphics::G, viewport::{View, Viewport, ViewportMode}
   }, AppState
 };
+use crate::utils::mouse_pos;
 
 pub mod frame;
 
@@ -56,9 +57,18 @@ pub struct Game {
     explosions: Vec<Explosion>,
     time_since_last_spawn: f32,
     game_over: bool,
+    view_rect: Rect,
+    viewport: Viewport,
 }
 
 impl Game {
+    fn create_viewport() -> (Viewport, Rect) {
+        let view_rect = Rect::new(-400.0, -300.0, 800., 600.);
+        let screen_size = Frame::get().screen_size;
+        let viewport = Viewport::fit(view_rect, screen_size, 0.0, ViewportMode::FitViewIntoScreen);
+        (viewport, view_rect)
+    }
+
     pub fn new() -> Box<Game> {
         // Create three bunkers at the bottom of the screen
         let bunkers = vec![
@@ -67,6 +77,8 @@ impl Game {
             Bunker { pos: Vec2::new(200.0, 280.0 - BUNKER_HEIGHT), active: true, firing: false },
         ];
 
+        let (viewport, view_rect) = Self::create_viewport();
+
         Box::new(Game {
             bunkers,
             player_missiles: Vec::new(),
@@ -74,6 +86,8 @@ impl Game {
             explosions: Vec::new(),
             time_since_last_spawn: 0.0,
             game_over: false,
+            view_rect,
+            viewport,
         })
     }
 
@@ -238,13 +252,11 @@ impl Game {
     }
 
     fn render(&self) {
-        let frame = Frame::get();
         clear_background(BLACK);
 
-        let view_rect = Rect::new(-400.0, -300.0, 800., 600.);
-        let viewport = Viewport::fit(view_rect, frame.screen_size, 0.0, ViewportMode::FitViewIntoScreen);
-        viewport.set_as_camera();
-        G::filled_rect(view_rect, color::DARKGRAY.mul(0.5));
+        // Use the stored viewport
+        self.viewport.set_as_camera();
+        G::filled_rect(self.view_rect, color::DARKGRAY.mul(0.5));
 
         // Draw ground
         let ground_rect = Rect::new(-400.0, 280.0, 800.0, GROUND_HEIGHT);
@@ -298,25 +310,18 @@ impl AppState for Game {
         Diagnostics::update();
         Frame::update();
 
+        // Update viewport with current screen size
+        let (viewport, view_rect) = Self::create_viewport();
+        self.viewport = viewport;
+        self.view_rect = view_rect;
+
         let dt = Frame::get().t;
 
         if !self.game_over {
             // Handle mouse click for firing missiles
             if is_mouse_button_pressed(MouseButton::Left) {
-                let mouse_pos = mouse_position();
-                let view_rect = Rect::new(-400.0, -300.0, 800., 600.);
-                let screen_size = Frame::get().screen_size;
-
-                // Manual conversion from screen to world coordinates
-                // Scale mouse position from [0, screen_size] to [-1, 1]
-                let normalized_x = (mouse_pos.0 / screen_size.x) * 2.0 - 1.0;
-                let normalized_y = (mouse_pos.1 / screen_size.y) * 2.0 - 1.0;
-
-                // Scale to view coordinates
-                let world_pos = Vec2::new(
-                    normalized_x * view_rect.w / 2.0,
-                    normalized_y * view_rect.h / 2.0
-                );
+                let mouse_pos = mouse_pos();
+                let world_pos = self.viewport.vec2_to_view(mouse_pos);
 
                 if let Some(bunker_idx) = self.find_closest_active_bunker(world_pos) {
                     let bunker = &mut self.bunkers[bunker_idx];
