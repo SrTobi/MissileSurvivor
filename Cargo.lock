@@ -3,7 +3,7 @@
 version = 4
 
 [[package]]
-name = "MCom"
+name = "MissileSurvivor"
 version = "0.1.0"
 dependencies = [
  "derive_builder",

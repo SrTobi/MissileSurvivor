@@ -58,7 +58,7 @@ done
 # Restore positionals
 set -- "${POSITIONAL[@]}"
 
-PROJECT_NAME="MCom"
+PROJECT_NAME="MissileSurvivor"
 
 HTML=$(cat <<- END
 <!DOCTYPE html>
@@ -110,7 +110,7 @@ END
 
 # Build
 export RUSTFLAGS='--cfg getrandom_backend="wasm_js"'
-cargo build --bin MCom $BUILD_FLAGS --target wasm32-unknown-unknown
+cargo build --bin MissileSurvivor $BUILD_FLAGS --target wasm32-unknown-unknown
 
 
 
