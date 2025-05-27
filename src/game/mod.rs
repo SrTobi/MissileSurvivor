@@ -199,8 +199,6 @@ impl Game {
     let mut new_explosions = Vec::new();
     // Collect positions of destroyed enemy missiles for experience
     let mut destroyed_enemy_missile_positions = Vec::new();
-    // Track if any stars were hit
-    let mut hit_stars: Vec<usize> = Vec::new();
 
     // Update existing explosions
     for explosion in &mut self.explosions {

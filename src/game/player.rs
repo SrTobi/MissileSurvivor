@@ -24,7 +24,7 @@ impl Skill {
     /// Get a random subset of skills
     pub fn random_subset(count: usize) -> Vec<Skill> {
         let mut skills = Self::all();
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         skills.shuffle(&mut rng);
         skills.truncate(count);
         skills
