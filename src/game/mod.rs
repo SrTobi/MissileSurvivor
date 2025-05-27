@@ -61,6 +61,15 @@ pub struct Game {
 }
 
 impl Game {
+    fn create_explosion(pos: Vec2) -> Explosion {
+        Explosion {
+            pos,
+            radius: 0.0,
+            max_radius: EXPLOSION_MAX_RADIUS,
+            time_remaining: EXPLOSION_DURATION,
+        }
+    }
+
     fn create_viewport() -> (Viewport, Rect) {
         let view_rect = Rect::new(-400.0, -300.0, 800., 600.);
         let screen_size = Frame::get().screen_size;
@@ -159,12 +168,7 @@ impl Game {
                 // Check if missile reached target
                 if missile.current_pos.distance(missile.target_pos) < 5.0 {
                     missile.exploded = true;
-                    new_explosions.push(Explosion {
-                        pos: missile.current_pos,
-                        radius: 0.0,
-                        max_radius: EXPLOSION_MAX_RADIUS,
-                        time_remaining: EXPLOSION_DURATION,
-                    });
+                    new_explosions.push(Self::create_explosion(missile.current_pos));
                 }
             }
         }
@@ -177,19 +181,13 @@ impl Game {
 
                 // Check if missile hit a bunker
                 for bunker in &mut self.bunkers {
-                    if bunker.active && 
-                       missile.current_pos.x >= bunker.pos.x - BUNKER_WIDTH/2.0 &&
+                    if missile.current_pos.x >= bunker.pos.x - BUNKER_WIDTH/2.0 &&
                        missile.current_pos.x <= bunker.pos.x + BUNKER_WIDTH/2.0 &&
                        missile.current_pos.y >= bunker.pos.y - BUNKER_HEIGHT/2.0 &&
                        missile.current_pos.y <= bunker.pos.y + BUNKER_HEIGHT/2.0 {
                         missile.exploded = true;
                         bunker.active = false;
-                        new_explosions.push(Explosion {
-                            pos: bunker.pos,
-                            radius: 0.0,
-                            max_radius: EXPLOSION_MAX_RADIUS,
-                            time_remaining: EXPLOSION_DURATION,
-                        });
+                        new_explosions.push(Self::create_explosion(bunker.pos));
                     }
                 }
             }
@@ -216,12 +214,7 @@ impl Game {
                 for missile in &mut self.player_missiles {
                     if !missile.exploded && missile.current_pos.distance(explosion.pos) <= explosion.radius {
                         missile.exploded = true;
-                        new_explosions.push(Explosion {
-                            pos: missile.current_pos,
-                            radius: 0.0,
-                            max_radius: EXPLOSION_MAX_RADIUS,
-                            time_remaining: EXPLOSION_DURATION,
-                        });
+                        new_explosions.push(Self::create_explosion(missile.current_pos));
                     }
                 }
 
@@ -229,12 +222,7 @@ impl Game {
                 for missile in &mut self.enemy_missiles {
                     if !missile.exploded && missile.current_pos.distance(explosion.pos) <= explosion.radius {
                         missile.exploded = true;
-                        new_explosions.push(Explosion {
-                            pos: missile.current_pos,
-                            radius: 0.0,
-                            max_radius: EXPLOSION_MAX_RADIUS,
-                            time_remaining: EXPLOSION_DURATION,
-                        });
+                        new_explosions.push(Self::create_explosion(missile.current_pos));
                     }
                 }
             }
