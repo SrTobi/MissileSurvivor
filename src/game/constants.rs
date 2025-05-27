@@ -4,6 +4,7 @@ pub const BUNKER_HEIGHT: f32 = 20.0;
 pub const MISSILE_SPEED: f32 = 100.0;
 pub const EXPLOSION_MAX_RADIUS: f32 = 50.0;
 pub const EXPLOSION_GROWTH_RATE: f32 = 200.0; // pixel/sec
+pub const EXPLOSION_AFTER_GLOW: f32 = 0.1;
 pub const ENEMY_MISSILE_SPAWN_INTERVAL: f32 = 4.0;
 pub const INITIAL_SPAWN_TIME: f32 = 2.0; // seconds
 

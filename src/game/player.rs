@@ -1,4 +1,4 @@
-use crate::game::constants::{EXPLOSION_GROWTH_RATE, EXPLOSION_MAX_RADIUS, MISSILE_SPEED};
+use crate::game::constants::{EXPLOSION_AFTER_GLOW, EXPLOSION_GROWTH_RATE, EXPLOSION_MAX_RADIUS, MISSILE_SPEED};
 use rand::seq::SliceRandom;
 
 /// Enum representing the different skills a player can level up
@@ -84,7 +84,7 @@ impl Player {
     /// Get the explosion static duration multiplier based on the explosion after glow skill level
     /// Static duration grows by 20% per level
     pub fn get_explosion_static_duration(&self) -> f32 {
-        0.05 * (1.0 + 0.50 * self.explosion_after_glow_level as f32) // Base value 0.05 from Explosion::new
+        EXPLOSION_AFTER_GLOW * (1.0 + 0.50 * self.explosion_after_glow_level as f32) // Base value 0.05 from Explosion::new
     }
 
     /// Get the explosion max radius multiplier based on the explosion radius skill level

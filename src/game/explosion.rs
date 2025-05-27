@@ -1,5 +1,5 @@
 use macroquad::prelude::Vec2;
-use crate::game::constants::{EXPLOSION_MAX_RADIUS, EXPLOSION_GROWTH_RATE};
+use crate::game::constants::{EXPLOSION_MAX_RADIUS, EXPLOSION_GROWTH_RATE, EXPLOSION_AFTER_GLOW};
 use crate::game::player::Player;
 
 #[derive(PartialEq)]
@@ -21,7 +21,7 @@ impl Default for ExplosionParams {
         Self {
             max_radius: EXPLOSION_MAX_RADIUS,
             growth_rate: EXPLOSION_GROWTH_RATE,
-            static_duration: 0.05, // Default static duration from Explosion::new
+            static_duration: EXPLOSION_AFTER_GLOW,
         }
     }
 }
