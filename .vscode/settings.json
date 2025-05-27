@@ -1,0 +1,7 @@
+{
+  "editor.indentSize": 2,
+  "[rust]": {
+    "editor.detectIndentation": false,
+    "editor.tabSize": 2
+  }
+}

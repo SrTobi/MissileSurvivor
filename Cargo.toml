@@ -1,0 +1,39 @@
+[package]
+edition = "2024"
+name = "MCom"
+version = "0.1.0"
+
+[lints.rust]
+dead_code = "allow" # TODO: remove
+non_local_definitions = "allow" 
+
+[lints.clippy]
+cloned_instead_of_copied = "warn"
+default_trait_access = "warn"
+doc_markdown = "warn"
+enum_glob_use = "warn"
+flat_map_option = "warn"
+implicit_hasher = "warn"
+iter_without_into_iter = "warn"
+manual_assert = "warn"
+manual_let_else = "warn"
+manual_string_new = "warn"
+match_wildcard_for_single_variants = "warn"
+non_local_definitions = "allow"
+print_stdout = "warn"
+redundant_else = "warn"
+ref_option_ref = "warn"
+return_self_not_must_use = "allow"
+semicolon_if_nothing_returned = "warn"
+unused_self = "warn"
+
+[dependencies]
+derive_builder = "0.20.2"
+env_logger = "0.11"
+extend = "1.2.0"
+lazy_static = "1.4.0"
+log = "0.4"
+macroquad = "0.4"
+paste = "1.0"
+rand = "0.9"
+rand_distr = "0.5.1"

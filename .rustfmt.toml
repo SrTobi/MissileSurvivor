@@ -1,0 +1,7 @@
+group_imports = "StdExternalCrate"
+imports_granularity = "Module"
+imports_layout = "HorizontalVertical"
+max_width = 140
+merge_imports = true
+reorder_imports = true
+tab_spaces = 2
