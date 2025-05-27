@@ -16,74 +16,16 @@ use rand_distr::Exp;
 use std::{process, time::Duration};
 
 pub mod frame;
+pub mod constants;
+pub mod bunker;
+pub mod missile;
+pub mod explosion;
 
-const GROUND_HEIGHT: f32 = 20.0;
-const BUNKER_WIDTH: f32 = 30.0;
-const BUNKER_HEIGHT: f32 = 20.0;
-const MISSILE_SPEED: f32 = 100.0;
-const EXPLOSION_MAX_RADIUS: f32 = 50.0;
-const EXPLOSION_GROWTH_RATE: f32 = 200.0;
-const ENEMY_MISSILE_SPAWN_INTERVAL: f32 = 1.0;
+use constants::*;
+use bunker::Bunker;
+use missile::Missile;
+use explosion::Explosion;
 
-#[derive(Clone, Copy)]
-struct Bunker {
-  pos: Vec2,
-  active: bool,
-  firing: bool,
-}
-
-impl Bunker {
-  fn new(pos: Vec2) -> Self {
-    Self {
-      pos,
-      active: true,
-      firing: false,
-    }
-  }
-
-  fn reset(&mut self) {
-    self.active = true;
-    self.firing = false;
-  }
-}
-
-struct Missile {
-  start_pos: Vec2,
-  target_pos: Vec2,
-  current_pos: Vec2,
-  direction: Vec2,
-  target_bunker_idx: Option<usize>,
-  exploded: bool,
-}
-
-impl Missile {
-  fn new(start_pos: Vec2, target_pos: Vec2, target_bunker_idx: Option<usize>) -> Self {
-    Self {
-      start_pos,
-      target_pos,
-      current_pos: start_pos,
-      direction: (target_pos - start_pos).normalize(),
-      target_bunker_idx,
-      exploded: false,
-    }
-  }
-}
-
-struct Explosion {
-  pos: Vec2,
-  radius: f32,
-  max_radius: f32,
-}
-
-impl Explosion {
-  fn new(pos: Vec2) -> Explosion {
-    Explosion {
-      pos,
-      radius: 0.0,
-      max_radius: EXPLOSION_MAX_RADIUS,
-    }
-  }
-}
 
 pub struct Game {
   bunkers: Vec<Bunker>,
