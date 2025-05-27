@@ -117,7 +117,7 @@ impl Explosion {
         // Calculate remaining distance
         let remaining_distance = self.max_radius - self.radius;
 
-        if remaining_distance > 0.01 {
+        if remaining_distance > 0.1 {
           // Calculate deceleration needed to reach max_radius with decreasing speed
           let deceleration = self.current_growth_rate * self.current_growth_rate / (2.0 * remaining_distance);
 

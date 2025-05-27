@@ -4,6 +4,7 @@ use crate::game::constants::{EXPLOSION_GROWTH_RATE, EXPLOSION_MAX_RADIUS, MISSIL
 pub struct Player {
     // Skill levels
     player_level: u32,
+    experience: f32,
     explosion_speed_level: u32,
     explosion_after_glow_level: u32,
     explosion_radius_level: u32,
@@ -15,6 +16,7 @@ impl Player {
     pub fn new() -> Self {
         Self {
             player_level: 0,
+            experience: 0.0,
             explosion_speed_level: 0,
             explosion_after_glow_level: 0,
             explosion_radius_level: 0,
@@ -45,9 +47,44 @@ impl Player {
     pub fn get_missile_speed(&self) -> f32 {
         MISSILE_SPEED * (1.0 + 0.2 * self.missile_speed_level as f32)
     }
-    
+
     pub fn player_level(&self) -> u32 {
         self.player_level
+    }
+
+    /// Calculate the experience required for the next level
+    /// First level requires 50 experience, each subsequent level requires 10% more
+    pub fn experience_required_for_next_level(&self) -> f32 {
+        50.0 * (1.0 + 0.1 * self.player_level as f32)
+    }
+
+    /// Add experience to the player
+    /// Returns true if the player has enough experience to level up
+    pub fn add_experience(&mut self, amount: f32) -> usize {
+        self.experience += amount;
+        
+        let mut stars = 0;
+        while self.experience >= self.experience_required_for_next_level() {
+            stars += 1;
+            self.experience -= self.experience_required_for_next_level();
+        }
+        stars
+    }
+
+    /// Level up the player
+    /// This will reset the experience counter and increment the player level
+    pub fn level_up(&mut self) {
+        self.player_level += 1;
+    }
+
+    /// Get the current experience
+    pub fn experience(&self) -> f32 {
+        self.experience
+    }
+
+    /// Get the experience progress as a percentage (0.0 - 1.0)
+    pub fn experience_progress(&self) -> f32 {
+        self.experience / self.experience_required_for_next_level()
     }
 }
 

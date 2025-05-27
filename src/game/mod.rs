@@ -21,26 +21,45 @@ pub mod explosion;
 pub mod frame;
 pub mod missile;
 pub mod player;
+pub mod star;
 
 use bunker::Bunker;
 use constants::*;
 use explosion::{Explosion, ExplosionParams};
 use missile::Missile;
 use player::Player;
+use star::Star;
 
 pub struct Game {
   bunkers: Vec<Bunker>,
   missiles: Vec<Missile>,
   explosions: Vec<Explosion>,
+  stars: Vec<Star>,
   time_until_next_missile_spawn: f32,
   game_over: bool,
   view_rect: Rect,
   viewport: Viewport,
   game_time: f32,
   player: Player,
+  level_ups_left: usize,
 }
 
 impl Game {
+  // Calculate experience based on missile height
+  // 0 at bunker level (y=280), 100 at top of screen (y=-300)
+  fn calculate_experience_for_missile(&self, missile_pos: Vec2) -> f32 {
+    // Normalize the y position between bunker level and top of screen
+    let bunker_level = 280.0;
+    let top_level = -300.0;
+    let height_range = bunker_level - top_level;
+
+    // Calculate normalized height (0.0 at bunker level, 1.0 at top)
+    let normalized_height = (bunker_level - missile_pos.y) / height_range;
+
+    // Scale to experience (0 at bunker level, 100 at top)
+    normalized_height * 100.0
+  }
+
   pub fn new() -> Box<Game> {
     // Create three bunkers at the bottom of the screen
     let bunkers = vec![
@@ -55,12 +74,14 @@ impl Game {
       bunkers,
       missiles: Vec::new(),
       explosions: Vec::new(),
+      stars: Vec::new(),
       time_until_next_missile_spawn: INITIAL_SPAWN_TIME,
       game_over: false,
       view_rect,
       viewport,
       game_time: 0.0,
       player: Player::new(),
+      level_ups_left: 0,
     })
   }
 
@@ -156,9 +177,24 @@ impl Game {
     self.explosions.append(&mut new_explosions);
   }
 
+  // Spawn a star at a random position above the bunkers
+  fn spawn_star(&mut self) {
+    let mut rng = rng();
+
+    // Random position above the bunkers but below the top of the screen
+    let x = rng.random_range(-350.0..350.0);
+    let y = rng.random_range(-250.0..200.0); // Above bunkers, below top
+
+    self.stars.push(Star::new(Vec2::new(x, y)));
+  }
+
   fn update_explosions(&mut self, dt: f32) {
     // Collect positions for new explosions
     let mut new_explosions = Vec::new();
+    // Collect positions of destroyed enemy missiles for experience
+    let mut destroyed_enemy_missile_positions = Vec::new();
+    // Track if any stars were hit
+    let mut hit_stars: Vec<usize> = Vec::new();
 
     // Update existing explosions
     for explosion in &mut self.explosions {
@@ -166,7 +202,7 @@ impl Game {
       explosion.update(dt);
     }
 
-    // Check for chain reactions with missiles
+    // Check for chain reactions with missiles and stars
     for explosion in &self.explosions {
       // Check all missiles
       for missile in &mut self.missiles {
@@ -180,8 +216,30 @@ impl Game {
           } else {
             // Enemy missile - use default parameters
             new_explosions.push(Explosion::new_default(missile.current_pos));
+            // Store position for experience calculation
+            destroyed_enemy_missile_positions.push(missile.current_pos);
           }
         }
+      }
+
+      // Check if any stars are hit by this explosion
+      self.stars.retain(|star| {
+        if star.is_hit_by_explosion(explosion.pos, explosion.radius) {
+          self.level_ups_left += 1;
+          false
+        } else {
+          true
+        }
+      })
+    }
+
+    // Award experience for destroyed enemy missiles
+    for pos in destroyed_enemy_missile_positions {
+      let exp = self.calculate_experience_for_missile(pos);
+      let new_stars = self.player.add_experience(exp);
+
+      for _ in 0..new_stars {
+        self.spawn_star()
       }
     }
 
@@ -220,6 +278,12 @@ impl Game {
     self.viewport.set_as_camera();
     G::filled_rect(self.view_rect, color::DARKGRAY.mul(0.5));
 
+    // Draw experience bar at the top of the screen
+    let exp_progress = self.player.experience_progress();
+    let exp_bar_width = 800.0 * exp_progress;
+    let exp_bar_rect = Rect::new(-400.0, -300.0, exp_bar_width, 3.0);
+    G::filled_rect(exp_bar_rect, color::BLUE);
+
     // Draw ground
     let ground_rect = Rect::new(-400.0, 280.0, 800.0, GROUND_HEIGHT);
     G::filled_rect(ground_rect, color::YELLOW);
@@ -242,6 +306,14 @@ impl Game {
     // Draw explosions
     for explosion in &self.explosions {
       G::circle(explosion.pos, explosion.radius, 1.0, color::WHITE);
+    }
+
+    // Draw stars
+    for star in &self.stars {
+      if star.active {
+        // Draw a blue star (a circle for now)
+        G::circle(star.pos, star.radius, 1.0, color::BLUE);
+      }
     }
 
     // Draw timer in top right corner
